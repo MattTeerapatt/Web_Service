@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<link rel="stylesheet" type="text/css" href="/css/forum_entries.css">
+<html>
+<head>
+    <title>Forum Entries</title>
+    <script>
+        document.addEventListener("DOMContentLoaded",() =>{
+            var button = document.getElementById('submit');
+            button.addEventListener('click',function(e){
+                e.preventDefault();
+                Send_data();
+            });
+        })
+
+        async function Send_data(){
+            var comment = document.getElementById('comment').value;
+            var username = '{{ username }}';
+            var topic = '{{ entries.topic }}';
+
+            fetch('/add_comment/' + username ,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    comment: comment,
+                    topic: topic
+                })
+            })
+            .then(response => {
+                if (response.ok){
+                    response.json().then(data => {
+                        if (data['message'] == "Comment successfully"){
+                            alert(data['message']);
+                            location.reload();
+                            return;
+                        }
+                    })
+                }else{
+                    alert('An error occurred');
+                }
+            })
+            }
+                
+        async function checklike(topic,comment,commentowner,username){
+            var likebutton = document.getElementById('like');
+
+            fetch('/add_like_comment/' + username ,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic: topic,
+                    comment: comment,
+                    commentowner: commentowner
+                })
+            })
+            .then(response => {
+                if (response.ok){
+                    response.json().then(data => {
+                        if (data['message'] == "Like successfully"){
+                            alert(data['message']);
+                            location.reload();
+                            return;
+                        }else if (data['message'] == "Unlike successfully"){
+                            alert(data['message']);
+                            location.reload();
+                            return;
+                        }else{
+                           alert(data['message']);
+                           location.href = '/login';
+                        }
+                    })
+                }else{
+                    alert('An error occurred');
+                }
+            })
+        }
+        
+
+    </script>
+</head>
+<body>
+    <div class="head">
+        <h1>Forum Entries</h1>
+
+    </div>
+    <div class="container">
+        <ul>
+            <li>
+                <strong>Type:</strong><p>{{ entries.type }}</p>
+                <strong>Topic:</strong> <p>{{ entries.topic }}</p>
+                <strong>Content:</strong> <p>{{ entries.content }}</p>
+            </li>
+        </ul>
+        
+    </div>
+    <div class="container-submit">
+        <form>
+            <textarea type="text" name="comment" placeholder="Comment" id="comment"></textarea>
+            <input type="submit" name="submit" id="submit" value="Submit">
+        </form>
+    </div>
+    <div class="container2">
+        <h3>Comments</h3>
+        {%for comment in entries.comment%}
+        <ul>
+            <li>
+                <p><strong>Username:</strong>  {{ comment.username }}</p>
+                <p><strong>Comment:</strong>  {{ comment.comment }}</p>
+                <p><strong>Total Likes:</strong>  {{comment.like}} likes</p>
+            </li>
+        </ul>
+            {% if username in comment.likeuser %}
+                <button class = "unlike-button" id="like" onclick="checklike('{{ entries.topic }}','{{comment.comment}}','{{ comment.username }}','{{username}}')">unlike</button>
+            {% else %}
+                <button  class = "like-button" id="like" onclick="checklike('{{ entries.topic }}','{{comment.comment}}','{{ comment.username }}','{{username}}')">like</button>
+            {% endif %}
+        {%endfor%}
+    </div>
+        
+    <div class="back-position">
+        <!-- <button href="" class="back">Back to Form</button> -->
+        <button class="back" onclick="location.href='/process_login/{{username}}';">Back to form</button>
+
+        {% if username == entries.creator %}
+        <button class="back" onclick="location.href='/delete_forum/{{username}}/{{ entries.topic }}';">Delete</button>
+        {% endif %}
+    </div>
+    <script src="/js/forum_entries.js"></script>
+</body>
+</html>
